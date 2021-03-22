@@ -1,0 +1,316 @@
+<adapter>
+  <unique-id>jclouds</unique-id>
+  <start-up-event-imp>com.adaptris.core.event.StandardAdapterStartUpEvent</start-up-event-imp>
+  <heartbeat-event-imp>com.adaptris.core.HeartbeatEvent</heartbeat-event-imp>
+  <shared-components>
+    <connections>
+      <jetty-embedded-connection>
+        <unique-id>jetty-embedded-connection</unique-id>
+      </jetty-embedded-connection>
+      <jclouds-blobstore-connection>
+        <unique-id>jclouds</unique-id>
+        <credentials-builder class="jclouds-default-credentials-builder">
+          <identity>${accessKey}</identity>
+          <credentials>${secretKey}</credentials>
+        </credentials-builder>
+        <provider>aws-s3</provider>
+        <configuration/>
+      </jclouds-blobstore-connection>
+    </connections>
+    <services/>
+  </shared-components>
+  <event-handler class="default-event-handler">
+    <unique-id>default-event-handler</unique-id>
+    <connection class="null-connection">
+      <unique-id>null-connection</unique-id>
+    </connection>
+    <producer class="null-message-producer">
+      <unique-id>null-message-producer</unique-id>
+    </producer>
+  </event-handler>
+  <message-error-handler class="standard-processing-exception-handler">
+    <unique-id>error-handler</unique-id>
+    <processing-exception-service class="service-list">
+      <unique-id>error-handler</unique-id>
+      <services>
+        <exception-report-service>
+          <unique-id>error-report</unique-id>
+          <exception-serializer class="exception-as-json"/>
+        </exception-report-service>
+        <jetty-response-service>
+          <unique-id>jetty-response</unique-id>
+          <http-status>500</http-status>
+          <content-type>application/json</content-type>
+          <response-header-provider class="jetty-no-response-headers"/>
+        </jetty-response-service>
+      </services>
+    </processing-exception-service>
+  </message-error-handler>
+  <failed-message-retrier class="no-retries">
+    <unique-id>angry-kowalevski</unique-id>
+  </failed-message-retrier>
+  <channel-list>
+    <channel>
+      <consume-connection class="shared-connection">
+        <lookup-name>jetty-embedded-connection</lookup-name>
+      </consume-connection>
+      <produce-connection class="null-connection">
+        <unique-id>null-connection</unique-id>
+      </produce-connection>
+      <workflow-list>
+        <pooling-workflow>
+          <consumer class="jetty-message-consumer">
+            <unique-id>/api/s3</unique-id>
+            <path>${apiPath}/s3/*</path>
+            <parameter-handler class="jetty-http-parameters-as-metadata"/>
+            <header-handler class="jetty-http-headers-as-metadata"/>
+          </consumer>
+          <service-collection class="service-list">
+            <unique-id>service-list</unique-id>
+            <services>
+              <add-metadata-service>
+                <unique-id>add-bucket</unique-id>
+                <metadata-element>
+                  <key>bucket</key>
+                  <value>${bucket}</value>
+                </metadata-element>
+              </add-metadata-service>
+              <switch>
+                <unique-id>http-routing</unique-id>
+                <case>
+                  <condition class="jetty-route-condition">
+                    <url-pattern>/api/s3/?$</url-pattern>
+                    <method>GET</method>
+                  </condition>
+                  <service class="service-list">
+                    <unique-id>s3-list</unique-id>
+                    <services>
+                      <jclouds-container-list>
+                        <unique-id>list-from-s3</unique-id>
+                        <connection class="shared-connection">
+                          <lookup-name>jclouds</lookup-name>
+                        </connection>
+                        <output-style class="remote-blob-list-as-json"/>
+                        <container>%message{bucket}</container>
+                      </jclouds-container-list>
+                      <jclouds-blobstore-service>
+                        <unique-id>sleepy-shockley</unique-id>
+                        <connection class="shared-connection">
+                          <lookup-name>jclouds</lookup-name>
+                        </connection>
+                        <operation class="jclouds-blobstore-list">
+                          <container-name>%message{bucket}</container-name>
+                          <output-style class="remote-blob-list-as-json"/>
+                        </operation>
+                      </jclouds-blobstore-service>
+                    </services>
+                  </service>
+                </case>
+                <case>
+                  <condition class="jetty-route-condition">
+                    <url-pattern>/api/s3/(.*)$</url-pattern>
+                    <method>GET</method>
+                    <metadata-key>key</metadata-key>
+                  </condition>
+                  <service class="service-list">
+                    <unique-id>s3-get</unique-id>
+                    <services>
+                      <jclouds-blobstore-service>
+                        <unique-id>download-from-s3</unique-id>
+                        <connection class="shared-connection">
+                          <lookup-name>jclouds</lookup-name>
+                        </connection>
+                        <operation class="jclouds-blobstore-download">
+                          <container-name>%message{bucket}</container-name>
+                          <name>%message{key}</name>
+                        </operation>
+                      </jclouds-blobstore-service>
+                    </services>
+                  </service>
+                </case>
+                <case>
+                  <condition class="jetty-route-condition">
+                    <url-pattern>/api/s3/(.*)$</url-pattern>
+                    <method>POST</method>
+                    <metadata-key>key</metadata-key>
+                  </condition>
+                  <service class="service-list">
+                    <unique-id>s3-upload</unique-id>
+                    <services>
+                      <add-metadata-service>
+                        <unique-id>add-default-content-type</unique-id>
+                        <metadata-element>
+                          <key>Content-Type</key>
+                          <value>application/json</value>
+                        </metadata-element>
+                        <overwrite>false</overwrite>
+                      </add-metadata-service>
+                      <jclouds-blobstore-service>
+                        <unique-id>upload-to-s3</unique-id>
+                        <connection class="shared-connection">
+                          <lookup-name>jclouds</lookup-name>
+                        </connection>
+                        <operation class="jclouds-blobstore-upload">
+                          <container-name>%message{bucket}</container-name>
+                          <name>%message{key}</name>
+                        </operation>
+                      </jclouds-blobstore-service>
+                    </services>
+                  </service>
+                </case>
+                <case>
+                  <condition class="jetty-route-condition">
+                    <url-pattern>/api/s3/(.*)$</url-pattern>
+                    <method>DELETE</method>
+                    <metadata-key>key</metadata-key>
+                  </condition>
+                  <service class="service-list">
+                    <unique-id>s3-delete</unique-id>
+                    <services>
+                      <jclouds-blobstore-service>
+                        <unique-id>delete-from-s3</unique-id>
+                        <connection class="shared-connection">
+                          <lookup-name>jclouds</lookup-name>
+                        </connection>
+                        <operation class="jclouds-blobstore-remove">
+                          <container-name>%message{bucket}</container-name>
+                          <name>%message{key}</name>
+                        </operation>
+                      </jclouds-blobstore-service>
+                    </services>
+                  </service>
+                </case>
+              </switch>
+            </services>
+          </service-collection>
+          <producer class="jetty-standard-response-producer">
+            <unique-id>jetty-response-producer</unique-id>
+            <status-provider class="http-configured-status">
+              <status>OK_200</status>
+            </status-provider>
+            <response-header-provider class="jetty-no-response-headers"/>
+            <content-type-provider class="http-configured-content-type-provider">
+              <mime-type>application/json</mime-type>
+            </content-type-provider>
+          </producer>
+          <produce-exception-handler class="null-produce-exception-handler"/>
+          <unique-id>api-s3</unique-id>
+          <message-metrics-interceptor>
+            <unique-id>/api/s3-MessageMetrics</unique-id>
+            <timeslice-duration>
+              <unit>MINUTES</unit>
+              <interval>5</interval>
+            </timeslice-duration>
+            <timeslice-history-count>12</timeslice-history-count>
+          </message-metrics-interceptor>
+          <in-flight-workflow-interceptor>
+            <unique-id>/api/s3-InFlight</unique-id>
+          </in-flight-workflow-interceptor>
+          <jetty-pooling-workflow-interceptor>
+            <unique-id>jovial-saha</unique-id>
+          </jetty-pooling-workflow-interceptor>
+        </pooling-workflow>
+        <pooling-workflow>
+          <consumer class="jetty-message-consumer">
+            <unique-id>/api/s3utils</unique-id>
+            <path>${apiPath}/s3utils/*</path>
+            <parameter-handler class="jetty-http-parameters-as-metadata"/>
+            <header-handler class="jetty-http-headers-as-metadata"/>
+          </consumer>
+          <service-collection class="service-list">
+            <unique-id>awesome-fermi</unique-id>
+            <services>
+              <json-to-metadata>
+                <unique-id>json-to-metadata</unique-id>
+              </json-to-metadata>
+              <add-metadata-service>
+                <unique-id>add-bucket</unique-id>
+                <metadata-element>
+                  <key>bucket</key>
+                  <value>${bucket}</value>
+                </metadata-element>
+                <overwrite>false</overwrite>
+              </add-metadata-service>
+              <switch>
+                <unique-id>http-routing</unique-id>
+                <case>
+                  <condition class="jetty-route-condition">
+                    <url-pattern>^/api/s3utils/check-file-exists$</url-pattern>
+                  </condition>
+                  <service class="service-list">
+                    <unique-id>check-file-exists</unique-id>
+                    <services>
+                      <jclouds-blobstore-service>
+                        <unique-id>check-file-exists</unique-id>
+                        <connection class="shared-connection">
+                          <lookup-name>jclouds</lookup-name>
+                        </connection>
+                        <operation class="jclouds-blobstore-check-file-exists">
+                          <container-name>%message{bucket}</container-name>
+                          <name>%message{key}</name>
+                        </operation>
+                      </jclouds-blobstore-service>
+                    </services>
+                  </service>
+                </case>
+                <case>
+                  <condition class="jetty-route-condition">
+                    <url-pattern>^/api/s3utils/copy$</url-pattern>
+                  </condition>
+                  <service class="service-list">
+                    <unique-id>copy</unique-id>
+                    <services>
+                      <jclouds-blobstore-service>
+                        <unique-id>copy</unique-id>
+                        <connection class="shared-connection">
+                          <lookup-name>jclouds</lookup-name>
+                        </connection>
+                        <operation class="jclouds-blobstore-copy">
+                          <container-name>%message{bucket}</container-name>
+                          <name>%message{from}</name>
+                          <destination-container-name>%message{bucket}</destination-container-name>
+                          <destination-name>%message{to}</destination-name>
+                        </operation>
+                      </jclouds-blobstore-service>
+                    </services>
+                  </service>
+                </case>
+              </switch>
+            </services>
+          </service-collection>
+          <producer class="jetty-standard-response-producer">
+            <unique-id>jetty-response-producer</unique-id>
+            <status-provider class="http-configured-status">
+              <status>OK_200</status>
+            </status-provider>
+            <response-header-provider class="jetty-no-response-headers"/>
+            <content-type-provider class="http-configured-content-type-provider">
+              <mime-type>application/json</mime-type>
+            </content-type-provider>
+          </producer>
+          <produce-exception-handler class="null-produce-exception-handler"/>
+          <unique-id>api-s3utils</unique-id>
+          <message-metrics-interceptor>
+            <unique-id>/api/s3utils-MessageMetrics</unique-id>
+            <timeslice-duration>
+              <unit>MINUTES</unit>
+              <interval>5</interval>
+            </timeslice-duration>
+            <timeslice-history-count>12</timeslice-history-count>
+          </message-metrics-interceptor>
+          <in-flight-workflow-interceptor>
+            <unique-id>/api/s3utils-InFlight</unique-id>
+          </in-flight-workflow-interceptor>
+          <jetty-pooling-workflow-interceptor>
+            <unique-id>grave-noyce</unique-id>
+          </jetty-pooling-workflow-interceptor>
+        </pooling-workflow>
+      </workflow-list>
+      <unique-id>s3</unique-id>
+    </channel>
+  </channel-list>
+  <message-error-digester class="standard-message-error-digester">
+    <unique-id>error-digester</unique-id>
+    <digest-max-size>100</digest-max-size>
+  </message-error-digester>
+</adapter>

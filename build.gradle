@@ -1,0 +1,32 @@
+plugins {
+  // https://github.com/nemerosa/versioning
+  id 'net.nemerosa.versioning' version '2.14.0'
+}
+
+ext {
+  interlokParentGradle = "https://raw.githubusercontent.com/adaptris-labs/interlok-build-parent/master/build.gradle"
+  interlokVersion  = '4.0-SNAPSHOT'
+  // Include the WAR file since by default it is excluded.
+  includeWar='true'
+
+}
+
+allprojects {
+  apply from: "${interlokParentGradle}"
+  // specify the version of the configuration.
+  version=versioning.info.full
+}
+
+
+dependencies {
+  interlokRuntime  group: "com.adaptris", name: "interlok-json",        version: interlokVersion, changing: true
+  interlokJavadocs group: "com.adaptris", name: "interlok-json",        version: interlokVersion, changing: true, classifier: "javadoc", transitive: false
+  interlokRuntime  group: "com.adaptris", name: "interlok-jclouds-common",      version: interlokVersion, changing: true
+  interlokJavadocs group: "com.adaptris", name: "interlok-jclouds-common",      version: interlokVersion, changing: true, classifier: "javadoc", transitive: false
+  interlokRuntime  group: "com.adaptris", name: "interlok-jclouds-blobstore", version: interlokVersion, changing: true
+  interlokJavadocs group: "com.adaptris", name: "interlok-jclouds-blobstore", version: interlokVersion, changing: true, classifier: "javadoc", transitive: false
+  
+  interlokTestRuntime ("com.adaptris:interlok-service-tester:$interlokVersion") { changing=true }
+	
+  interlokRuntime ("org.apache.jclouds.provider:aws-s3:2.1.2")
+}
