@@ -25,8 +25,11 @@ dependencies {
   interlokJavadocs group: "com.adaptris", name: "interlok-jclouds-common",      version: interlokVersion, changing: true, classifier: "javadoc", transitive: false
   interlokRuntime  group: "com.adaptris", name: "interlok-jclouds-blobstore", version: interlokVersion, changing: true
   interlokJavadocs group: "com.adaptris", name: "interlok-jclouds-blobstore", version: interlokVersion, changing: true, classifier: "javadoc", transitive: false
+  interlokRuntime  group: "com.adaptris", name: "interlok-jclouds-aws-sts", version: interlokVersion, changing: true
+  interlokJavadocs group: "com.adaptris", name: "interlok-jclouds-aws-sts", version: interlokVersion, changing: true, classifier: "javadoc", transitive: false
   
   interlokTestRuntime ("com.adaptris:interlok-service-tester:$interlokVersion") { changing=true }
 	
   interlokRuntime ("org.apache.jclouds.provider:aws-s3:2.1.2")
+  interlokRuntime ("org.apache.jclouds.provider:aws-sts:2.1.2")
 }
