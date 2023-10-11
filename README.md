@@ -1,5 +1,8 @@
 # interlok-jclouds
 
+[![license](https://img.shields.io/github/license/interlok-testing/testing_jclouds.svg)](https://github.com/interlok-testing/testing_jclouds/blob/develop/LICENSE)
+[![Actions Status](https://github.com/interlok-testing/testing_jclouds/actions/workflows/gradle-build.yml/badge.svg)](https://github.com/interlok-testing/testing_jclouds/actions/workflows/gradle-build.yml)
+
 Project tests interlok-jclouds features
 
 ## What it does
