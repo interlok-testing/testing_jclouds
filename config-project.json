@@ -22,6 +22,6 @@
     "bootstrap.properties" : "bootstrap.properties",
     "log4j2.xml" : "log4j2.xml"
   },
-  "optionalComponentsInUse" : [ "com.adaptris:interlok-jclouds-aws-sts:4.0-SNAPSHOT", "com.adaptris:interlok-jclouds-blobstore:4.0-SNAPSHOT", "com.adaptris:interlok-jclouds-common:4.0-SNAPSHOT", "com.adaptris:interlok-json:4.0-SNAPSHOT" ],
+  "optionalComponentsInUse" : [ "com.adaptris:interlok-jclouds-aws-sts:5.0-SNAPSHOT", "com.adaptris:interlok-jclouds-blobstore:5.0-SNAPSHOT", "com.adaptris:interlok-jclouds-common:5.0-SNAPSHOT", "com.adaptris:interlok-json:5.0-SNAPSHOT" ],
   "structured" : true
 }

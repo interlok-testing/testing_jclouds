@@ -203,7 +203,6 @@
               <mime-type>application/json</mime-type>
             </content-type-provider>
           </producer>
-          <produce-exception-handler class="null-produce-exception-handler"/>
           <unique-id>api-s3</unique-id>
           <message-metrics-interceptor>
             <unique-id>/api/s3-MessageMetrics</unique-id>
@@ -298,7 +297,6 @@
               <mime-type>application/json</mime-type>
             </content-type-provider>
           </producer>
-          <produce-exception-handler class="null-produce-exception-handler"/>
           <unique-id>api-s3utils</unique-id>
           <message-metrics-interceptor>
             <unique-id>/api/s3utils-MessageMetrics</unique-id>
@@ -450,7 +448,6 @@
               <mime-type>application/json</mime-type>
             </content-type-provider>
           </producer>
-          <produce-exception-handler class="null-produce-exception-handler"/>
           <unique-id>api-s3-sts</unique-id>
           <message-metrics-interceptor>
             <unique-id>/api/s3-sts-MessageMetrics</unique-id>
