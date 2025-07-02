@@ -1,22 +1,43 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+import com.kstruct.gethostname4j.Hostname
+
+buildscript {
+  dependencies {
+    classpath "com.kstruct:gethostname4j:1.0.0"
+  }
+}
+
 plugins {
   // https://github.com/nemerosa/versioning
-  id 'net.nemerosa.versioning' version '2.14.0'
+  id 'net.nemerosa.versioning' version '3.1.0'
 }
 
 ext {
-  interlokParentGradle = "https://raw.githubusercontent.com/adaptris/interlok-build-parent/main/v5/build.gradle"
-  interlokVersion = '5.0-SNAPSHOT'
-  // Include the WAR file since by default it is excluded.
-  includeWar='true'
-
+//  testingCommonGradle = "https://raw.githubusercontent.com/interlok-testing/testing_common/refs/heads/master/common.gradle"
+  testingCommonGradle = "../testing_common/common.gradle"
+  interlokTestingVersion = "0.1"
 }
 
 allprojects {
-  apply from: "${interlokParentGradle}"
-  // specify the version of the configuration.
-  version=versioning.info.full
+  apply from: "${testingCommonGradle}"
 }
 
+tasks.register('copyAndSubstitute', Copy) {
+  from project.rootDir // Source directory containing the file
+  into buildDir      // Destination directory for the copied file
+
+  // Specify the file to copy and filter
+  filesMatching('hosts') {
+    filter(ReplaceTokens, tokens: [
+      hostname    : Hostname.getHostname()
+    ])
+  }
+}
+
+tasks.withType(Test).configureEach {
+  dependsOn 'copyAndSubstitute'
+  systemProperty "jdk.net.hosts.file", "${buildDir}/hosts"
+}
 
 dependencies {
   interlokRuntime  group: "com.adaptris", name: "interlok-json",        version: interlokVersion, changing: true
@@ -29,7 +50,25 @@ dependencies {
   interlokJavadocs group: "com.adaptris", name: "interlok-jclouds-aws-sts", version: interlokVersion, changing: true, classifier: "javadoc", transitive: false
   
   interlokTestRuntime ("com.adaptris:interlok-service-tester:$interlokVersion") { changing=true }
-	
-  interlokRuntime ("org.apache.jclouds.provider:aws-s3:2.1.2")
-  interlokRuntime ("org.apache.jclouds.provider:aws-sts:2.1.2")
+
+  //interlokRuntime ("org.apache.jclouds:jclouds:2.6.0")
+  interlokRuntime ("com.google.inject:guice").version {
+    strictly("6.0.0")
+  }
+  interlokRuntime("com.google.inject.extensions:guice-assistedinject").version {
+    strictly("6.0.0")
+  }
+  interlokRuntime ("org.apache.jclouds:jclouds-core").version {
+    strictly("2.6.0")
+  }
+  interlokRuntime ("org.apache.jclouds.provider:aws-s3:2.6.0")
+  interlokRuntime ("org.apache.jclouds.provider:aws-sts:2.6.0")
+
+  testImplementation (group: "com.adaptris", name: "interlok-testing-common", version: "$interlokTestingVersion") {
+    exclude group: 'org.testcontainers', module: 'testcontainers'
+  }
+  testImplementation "org.testcontainers:localstack:1.21.3"
+  testImplementation "software.amazon.awssdk:sts:2.31.73"
+  testImplementation "software.amazon.awssdk:s3:2.31.73"
+  testImplementation "ch.qos.logback:logback-classic:1.5.18"
 }

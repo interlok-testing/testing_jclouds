@@ -14,7 +14,20 @@
           <credentials>${secretKey}</credentials>
         </credentials-builder>
         <provider>aws-s3</provider>
-        <configuration/>
+        <configuration>
+          <key-value-pair>
+            <key>jclouds.region.us-standard.endpoint</key>
+            <value>${s3Endpoint}</value>
+          </key-value-pair>
+          <key-value-pair>
+            <key>jclouds.endpoint</key>
+            <value>${s3Endpoint}</value>
+          </key-value-pair>
+          <key-value-pair>
+            <key>jclouds.s3.virtual-host-buckets</key>
+            <value>false</value>
+          </key-value-pair>
+        </configuration>
       </jclouds-blobstore-connection>
       <jclouds-blobstore-connection>
         <unique-id>jclouds-sts</unique-id>
@@ -24,7 +37,20 @@
           <session-token>${stsSessionToken}</session-token>
         </credentials-builder>
         <provider>aws-s3</provider>
-        <configuration/>
+        <configuration>
+          <key-value-pair>
+            <key>jclouds.region.us-standard.endpoint</key>
+            <value>${s3Endpoint}</value>
+          </key-value-pair>
+          <key-value-pair>
+            <key>jclouds.endpoint</key>
+            <value>${s3Endpoint}</value>
+          </key-value-pair>
+          <key-value-pair>
+            <key>jclouds.s3.virtual-host-buckets</key>
+            <value>false</value>
+          </key-value-pair>
+        </configuration>
       </jclouds-blobstore-connection>
     </connections>
     <services/>
