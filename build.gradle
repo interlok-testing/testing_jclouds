@@ -15,7 +15,6 @@ plugins {
 ext {
   testingCommonGradle = "https://raw.githubusercontent.com/interlok-testing/testing_common/refs/heads/master/common.gradle?timestamp=${new Date().getTime()}"
 //  testingCommonGradle = "../testing_common/common.gradle"
-  interlokTestingVersion = "0.1"
 }
 
 allprojects {
@@ -48,8 +47,6 @@ dependencies {
   interlokJavadocs group: "com.adaptris", name: "interlok-jclouds-blobstore", version: interlokVersion, changing: true, classifier: "javadoc", transitive: false
   interlokRuntime  group: "com.adaptris", name: "interlok-jclouds-aws-sts", version: interlokVersion, changing: true
   interlokJavadocs group: "com.adaptris", name: "interlok-jclouds-aws-sts", version: interlokVersion, changing: true, classifier: "javadoc", transitive: false
-  
-  interlokTestRuntime ("com.adaptris:interlok-service-tester:$interlokVersion") { changing=true }
 
   //interlokRuntime ("org.apache.jclouds:jclouds:2.6.0")
   interlokRuntime ("com.google.inject:guice").version {
@@ -64,9 +61,6 @@ dependencies {
   interlokRuntime ("org.apache.jclouds.provider:aws-s3:2.6.0")
   interlokRuntime ("org.apache.jclouds.provider:aws-sts:2.6.0")
 
-  testImplementation (group: "com.adaptris", name: "interlok-testing-common", version: "$interlokTestingVersion") {
-    exclude group: 'org.testcontainers', module: 'testcontainers'
-  }
   testImplementation "org.testcontainers:localstack:1.21.3"
   testImplementation "software.amazon.awssdk:sts:2.31.73"
   testImplementation "software.amazon.awssdk:s3:2.31.73"
